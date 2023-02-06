@@ -133,9 +133,6 @@ class ScheduleAPI:
             raise Exception("You must login before you can get shifts")
 
         self.session.get("https://mcduk.reflexisinc.co.uk/RWS4/ess/ess_emp_schedule.jsp?authToken=" + self.auth_token)
-        print(f"https://mcduk.reflexisinc.co.uk/RWS4/controller/ess/map/{self.data['storeId']}/"
-                               f"{week_code}"
-                               f"/requestswithshiftsdata.json?authToken={self.auth_token}")
         req = self.session.get(f"https://mcduk.reflexisinc.co.uk/RWS4/controller/ess/map/{self.data['storeId']}/"
                                f"{week_code}"
                                f"/requestswithshiftsdata.json?authToken={self.auth_token}")
