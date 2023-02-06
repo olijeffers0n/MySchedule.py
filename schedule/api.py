@@ -27,6 +27,13 @@ class ScheduleAPI:
         iso = date.isocalendar()
         return "7" + str(iso[0])[2:] + str(iso[1])
 
+    def get_current_week(self) -> int:
+        req = self.session.get("https://mcduk.reflexisinc.co.uk/RWS4/ess/ess_emp_schedule.jsp?authToken=" + self.auth_token)
+        data = str(req.content)
+        index = data.index("setGenShiftId")
+
+        return int(data[index + 14:index + data[index:].index(")")])
+
     @staticmethod
     def generate_date(date_string: str) -> datetime:
         return datetime.strptime(str(date_string), "%Y%m%d")
@@ -115,18 +122,20 @@ class ScheduleAPI:
         self.auth_token = self._create_session(create_form_html)
         self._get_all_data()
 
-    def get_shifts_for_date(self, date: datetime.date) -> List[Shift]:
+    def get_shifts_for_week(self, week_code: int) -> List[Shift]:
         """
-        :param date: The date to get the shifts for
-        :return: A list of shifts for the given date
+        :param week_code: The week code to get the shifts for
+        :return: A list of shifts for the given week code
         """
-        week_code = self.get_week_code_for_date(date)
         shifts = []
 
         if self.data is None:
             raise Exception("You must login before you can get shifts")
 
         self.session.get("https://mcduk.reflexisinc.co.uk/RWS4/ess/ess_emp_schedule.jsp?authToken=" + self.auth_token)
+        print(f"https://mcduk.reflexisinc.co.uk/RWS4/controller/ess/map/{self.data['storeId']}/"
+                               f"{week_code}"
+                               f"/requestswithshiftsdata.json?authToken={self.auth_token}")
         req = self.session.get(f"https://mcduk.reflexisinc.co.uk/RWS4/controller/ess/map/{self.data['storeId']}/"
                                f"{week_code}"
                                f"/requestswithshiftsdata.json?authToken={self.auth_token}")
@@ -145,3 +154,10 @@ class ScheduleAPI:
                                 self.time_from_number(data[0]["duration"]), data))
 
         return shifts
+
+    def get_shifts_for_date(self, date: datetime.date) -> List[Shift]:
+        """
+        :param date: The date to get the shifts for
+        :return: A list of shifts for the given date
+        """
+        return self.get_shifts_for_week(int(self.get_week_code_for_date(date)))
