@@ -3,6 +3,8 @@ import datetime
 import bs4
 import pybase64
 from typing import List
+from lxml import etree
+import re
 from .structures import *
 
 
@@ -158,3 +160,45 @@ class ScheduleAPI:
         :return: A list of shifts for the given date
         """
         return self.get_shifts_for_week(int(self.get_week_code_for_date(date)))
+
+    
+    @staticmethod
+    def extract_time(cdata):
+        """
+        :param cdata: The CDATA content to extract the time from
+        :return: The time extracted from the CDATA content
+        """
+
+        time_match = re.search(r"\d{2}:\d{2}", cdata)
+        if time_match:
+            return time_match.group()
+        return None
+
+    def get_timecard(self, week_code: int):
+        """
+        :param week_code: The week code to get the timecard for
+        :return: A timecard for the given week code
+        """
+
+        # Content pending implementation...
+        CONTENT = """"""
+
+        # Parse the XML content
+        tree = etree.fromstring(CONTENT)
+
+        # Extract the HH:MM and punch type from each CDATA content and store in a list of dictionaries
+        data_list = []
+        for row in tree.xpath("//row"):
+            time_cdata = row.xpath("cell[2]/text()")[0]
+            punch_type_cdata = row.xpath("cell[3]/text()")[0]
+
+            time = self.extract_time(time_cdata)
+
+            punch_type_match = re.search(r'name="/RWS4/images/TC(.*?)\.png"', punch_type_cdata)
+            punch_type = punch_type_match.group(1) if punch_type_match else None
+
+            if time and punch_type:
+                data_list.append({"time": time, "punch_type": punch_type})
+
+        # Print the result (list of dictionaries with time and punch type)
+        print(data_list)
