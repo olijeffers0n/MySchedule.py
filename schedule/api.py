@@ -174,17 +174,37 @@ class ScheduleAPI:
             return time_match.group()
         return None
 
-    def get_timecard(self, week_code: int):
+    def get_timecard(self):
         """
         :param week_code: The week code to get the timecard for
         :return: A timecard for the given week code
         """
 
-        # Content pending implementation...
-        CONTENT = """"""
+        # Make a request to the timecard page
+        tc_request = self.session.post("https://mcduk.reflexisinc.co.uk/RWS4/rta/tcard.jsp", data={
+            "reqType": "STAFF",
+            "authToken": self.auth_token,
+        })
+    
+        # If the request failed, raise an exception
+        if tc_request.status_code != 200:
+            raise Exception("Failed to get timecard")
+
+        # Use BS4 to parse the HTML
+        parsed_html = bs4.BeautifulSoup(tc_request.content, "html.parser").decode()
+
+        # Extract the XML content from the JavaScript variable
+        punch_variable_match = re.search(r'punchXMLLoad\s*=\s*\'(.*?)\'', parsed_html, re.DOTALL)
+        punch_xml_string = punch_variable_match.group(1)
+
+        # Remove all backslashes from the XML content
+        punch_xml_string = punch_xml_string.replace("\\", "")
+
+        # Remove XML declaration
+        punch_xml_string = punch_xml_string.replace('<?xml version="1.0" encoding="UTF-8"?>', "")
 
         # Parse the XML content
-        tree = etree.fromstring(CONTENT)
+        tree = etree.fromstring(punch_xml_string)
 
         # Extract the HH:MM and punch type from each CDATA content and store in a list of dictionaries
         data_list = []
@@ -202,3 +222,4 @@ class ScheduleAPI:
 
         # Print the result (list of dictionaries with time and punch type)
         print(data_list)
+        return data_list
