@@ -7,7 +7,6 @@ from lxml import etree
 import re
 from .structures import *
 
-
 DAYS = {0: "Mon.", 1: "Tues.", 2: "Weds.", 3: "Thurs.", 4: "Fri.", 5: "Sat.", 6: "Sun."}
 
 
@@ -16,9 +15,13 @@ class ScheduleAPI:
     def __init__(self, username, password):
         self.username: str = username
         self.password: str = password
-        self.auth_token: str = None
-        self.data: dict = None
+        self.auth_token: Union[str, None] = None
+        self.data: Union[dict, None] = None
         self.session: requests.Session = requests.session()
+        self.session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                          "(KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36"
+        })
 
     @staticmethod
     def get_week_code_for_date(date: datetime) -> str:
@@ -30,7 +33,8 @@ class ScheduleAPI:
         return "7" + str(iso[0])[2:] + str(iso[1])
 
     def get_current_week(self) -> int:
-        req = self.session.get("https://mcduk.reflexisinc.co.uk/RWS4/ess/ess_emp_schedule.jsp?authToken=" + self.auth_token)
+        req = self.session.get(
+            "https://mcduk.reflexisinc.co.uk/RWS4/ess/ess_emp_schedule.jsp?authToken=" + self.auth_token)
         data = str(req.content)
         index = data.index("setGenShiftId")
 
@@ -111,7 +115,7 @@ class ScheduleAPI:
 
         variables = {}
 
-        for line in html[start+46:end+len(html[:start])].split("\n"):
+        for line in html[start + 46:end + len(html[:start])].split("\n"):
             if line.strip() == "":
                 continue
             new_line = line.strip().replace("var ", "").replace(";", "")
