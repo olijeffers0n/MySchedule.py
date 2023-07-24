@@ -194,7 +194,7 @@ class ScheduleAPI:
         parsed_html = bs4.BeautifulSoup(tc_request.content, "html.parser").decode()
 
         # Extract the XML content from the JavaScript variable
-        punch_variable_match = re.search(r'punchXMLLoad\s*=\s*\'(.*?)\'', parsed_html, re.DOTALL)
+        punch_variable_match = re.search(r'punchXMLLoad\s*=\s*\'(.*?)\';', parsed_html, re.DOTALL)
         punch_xml_string = punch_variable_match.group(1)
 
         # Remove all backslashes from the XML content
@@ -207,19 +207,28 @@ class ScheduleAPI:
         tree = etree.fromstring(punch_xml_string)
 
         # Extract the HH:MM and punch type from each CDATA content and store in a list of dictionaries
-        data_list = []
+        data_dict = {}
+        date = None
+
+        # Loop through each row in the XML
         for row in tree.xpath("//row"):
-            time_cdata = row.xpath("cell[2]/text()")[0]
-            punch_type_cdata = row.xpath("cell[3]/text()")[0]
+            date_nodes = row.xpath("cell[1]/text()")
+            time_nodes = row.xpath("cell[2]/text()")
+            punch_type_nodes = row.xpath("cell[3]/text()")
 
-            time = self.extract_time(time_cdata)
+            # Check if date is present, update the date variable and add a new entry to the data dictionary
+            if date_nodes:
+                date = date_nodes[0]
+                data_dict[date] = {"punches": []}
 
-            punch_type_match = re.search(r'name="/RWS4/images/TC(.*?)\.png"', punch_type_cdata)
-            punch_type = punch_type_match.group(1) if punch_type_match else None
+            # Check if time and punch is present
+            if time_nodes and punch_type_nodes:
+                # Extract the time and punch type from the CDATA content
+                time = self.extract_time(time_nodes[0])
 
-            if time and punch_type:
-                data_list.append({"time": time, "punch_type": punch_type})
+                punch_type_match = re.search(r'src="/RWS4/images/TC(.*?)\.png"',  punch_type_nodes[0])
+                punch_type = punch_type_match.group(1) if punch_type_match else None
 
-        # Print the result (list of dictionaries with time and punch type)
-        print(data_list)
-        return data_list
+                # Add the time and punch type as a new entry
+                data_dict[date]["punches"].append({"time": time, "punch_type": punch_type})
+        return data_dict
