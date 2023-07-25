@@ -1,11 +1,11 @@
 import requests
-import datetime
+from datetime import datetime
 import bs4
 import pybase64
-from typing import List
+from typing import List, Union
 from lxml import etree
 import re
-from .structures import *
+from .structures import Shift, Punch, PunchType, Clock
 
 DAYS = {0: "Mon.", 1: "Tues.", 2: "Weds.", 3: "Thurs.", 4: "Fri.", 5: "Sat.", 6: "Sun."}
 
@@ -164,7 +164,6 @@ class ScheduleAPI:
         :return: A list of shifts for the given date
         """
         return self.get_shifts_for_week(int(self.get_week_code_for_date(date)))
-
     
     @staticmethod
     def extract_time(cdata):
@@ -178,7 +177,7 @@ class ScheduleAPI:
             return time_match.group()
         return None
 
-    def get_timecard(self):
+    def get_timecard(self) -> List[Clock]:
         """
         :param week_code: The week code to get the timecard for
         :return: A timecard for the given week code
@@ -235,4 +234,9 @@ class ScheduleAPI:
 
                 # Add the time and punch type as a new entry
                 data_dict[date]["punches"].append({"time": time, "punch_type": punch_type})
-        return data_dict
+
+        clocks = []
+        for date, data in data_dict.items():
+            clocks.append(Clock(date, [Punch(PunchType(punch["punch_type"]), punch["time"]) for punch in data["punches"]]))
+
+        return clocks
