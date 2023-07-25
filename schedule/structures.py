@@ -5,7 +5,6 @@ import json
 
 
 class Shift:
-
     def __init__(self, date, start_time, end_time, duration, raw):
         self._date = date
         self._start_time = start_time

@@ -185,8 +185,16 @@ class ScheduleAPI:
 
         # Make a request to the timecard page
         tc_request = self.session.post("https://mcduk.reflexisinc.co.uk/RWS4/rta/tcard.jsp", data={
-            "reqType": "STAFF",
             "authToken": self.auth_token,
+            "reqType": "ESS",
+            # "startDate": "17/07/2023",
+            # "endDate": "23/07/2023",
+            # "startDateInt": 20230717,
+            # "endDateInt": 20230723,
+            "weekendDate": "30/04/2023",
+            "mm": "ESSTIMECARD",
+            "sm": "SUMMARY",
+            "weekend": "30/04/2023"
         })
     
         # If the request failed, raise an exception
@@ -205,6 +213,8 @@ class ScheduleAPI:
 
         # Remove XML declaration
         punch_xml_string = punch_xml_string.replace('<?xml version="1.0" encoding="UTF-8"?>', "")
+
+        # print(punch_xml_string)
 
         # Parse the XML content
         tree = etree.fromstring(punch_xml_string)
