@@ -48,10 +48,10 @@ class Shift:
 
 
 class PunchType(Enum):
-    ShiftStart = "ShiftStart"
-    BreakStart = "MealStart"
-    BreakEnd = "MealEnd"
-    ShiftEnd = "ShiftEnd"
+    ShiftStart = "Shift Start"
+    BreakStart = "Meal Start"
+    BreakEnd = "Meal End"
+    ShiftEnd = "Shift End"
 
 
 class Punch:

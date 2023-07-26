@@ -242,7 +242,7 @@ class ScheduleAPI:
 
         # Extract the XML content from the JavaScript variable
         punch_variable_match = re.search(
-            r"punchXMLLoad\s*=\s*\'(.*?)\';", parsed_html, re.DOTALL
+            r"testXMLLoad\s*=\s*\'(.*?)\';", parsed_html, re.DOTALL
         )
         punch_xml_string = punch_variable_match.group(1)
 
@@ -266,23 +266,20 @@ class ScheduleAPI:
         # Loop through each row in the XML
         for row in tree.xpath("//row"):
             date_nodes = row.xpath("cell[1]/text()")
-            time_nodes = row.xpath("cell[2]/text()")
+            time_nodes = row.xpath("cell[5]/text()")
             punch_type_nodes = row.xpath("cell[3]/text()")
 
             # Check if date is present, update the date variable and add a new entry to the data dictionary
-            if date_nodes:
+            if date_nodes and date_nodes[0] != " ":
                 date = date_nodes[0]
                 data_dict[date] = {"punches": []}
-
+            
             # Check if time and punch is present
             if time_nodes and punch_type_nodes:
                 # Extract the time and punch type from the CDATA content
                 time = self.extract_time(time_nodes[0])
 
-                punch_type_match = re.search(
-                    r'src="/RWS4/images/TC(.*?)\.png"', punch_type_nodes[0]
-                )
-                punch_type = punch_type_match.group(1) if punch_type_match else None
+                punch_type = punch_type_nodes[0]
 
                 # Add the time and punch type as a new entry
                 data_dict[date]["punches"].append({"time": time, "type": punch_type})
@@ -299,15 +296,15 @@ class ScheduleAPI:
             for punch in data["punches"]:
                 punches.append(Punch(PunchType(punch["type"]), punch["time"]))
 
-                if punch["type"] == "ShiftStart":
+                if punch["type"] == "Shift Start":
                     clock_in_time = datetime.strptime(punch["time"], "%H:%M")
 
-                if punch["type"] == "MealStart" or punch["type"] == "ShiftEnd":
+                if punch["type"] == "Meal Start" or punch["type"] == "Shift End":
                     diff = datetime.strptime(punch["time"], "%H:%M") - clock_in_time
                     time_clocked_in += diff
                     break_time = datetime.strptime(punch["time"], "%H:%M")
 
-                if punch["type"] == "MealEnd":
+                if punch["type"] == "Meal End":
                     diff = datetime.strptime(punch["time"], "%H:%M") - break_time
                     time_clocked_out += diff
                     clock_in_time = datetime.strptime(punch["time"], "%H:%M")
