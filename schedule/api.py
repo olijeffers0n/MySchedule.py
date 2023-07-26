@@ -209,27 +209,28 @@ class ScheduleAPI:
             return time_match.group()
         return None
 
-    def get_timecard(self) -> List[Clock]:
+    def get_timecard(self, week_end_date: str = None) -> List[Clock]:
         """
-        :param week_code: The week code to get the timecard for
+        :param week_end_date: The string in format DD/MM/YYYY of the Sunday of the week to get the timecard for
         :return: A timecard for the given week code
         """
+        data = {
+                "authToken": self.auth_token,
+                "reqType": "ESS",
+                "mm": "ESSTIMECARD",
+                "sm": "SUMMARY",
+            }
+
+        if week_end_date is not None:
+            data.update({
+                "weekendDate": week_end_date,
+                "weekend": week_end_date,
+            })
 
         # Make a request to the timecard page
         tc_request = self.session.post(
             "https://mcduk.reflexisinc.co.uk/RWS4/rta/tcard.jsp",
-            data={
-                "authToken": self.auth_token,
-                "reqType": "ESS",
-                # "startDate": "17/07/2023",
-                # "endDate": "23/07/2023",
-                # "startDateInt": 20230717,
-                # "endDateInt": 20230723,
-                "weekendDate": "30/07/2023",
-                "mm": "ESSTIMECARD",
-                "sm": "SUMMARY",
-                "weekend": "30/07/2023",
-            },
+            data=data,
         )
 
         # If the request failed, raise an exception
