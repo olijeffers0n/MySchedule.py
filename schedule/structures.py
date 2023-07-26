@@ -33,16 +33,21 @@ class Shift:
         return self._raw
 
     def __repr__(self) -> str:
-        return "Shift("+json.dumps({
-            "date": self.date.strftime("%d/%m/%Y"),
-            "start_time": self.start_time,
-            "end_time": self.end_time,
-            "duration": self.duration
-        }) + ")"
+        return (
+            "Shift("
+            + json.dumps(
+                {
+                    "date": self.date.strftime("%d/%m/%Y"),
+                    "start_time": self.start_time,
+                    "end_time": self.end_time,
+                    "duration": self.duration,
+                }
+            )
+            + ")"
+        )
 
 
 class PunchType(Enum):
-
     ShiftStart = "ShiftStart"
     BreakStart = "MealStart"
     BreakEnd = "MealEnd"
@@ -50,17 +55,15 @@ class PunchType(Enum):
 
 
 class Punch:
-
     def __init__(self, punch_type: PunchType, time: str) -> None:
-        self.punch_type = punch_type
+        self.type = punch_type
         self.time = time
 
     def __repr__(self) -> str:
-        return f"Punch({self.punch_type}, {self.time})"
+        return f"Punch({self.type}, {self.time})"
 
 
 class Clock:
-
     def __init__(self, date: str, punches: List[Punch]) -> None:
         self.date = date
         self.punches = punches
