@@ -1,5 +1,5 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import bs4
 import pybase64
 from typing import List, Union
@@ -209,27 +209,28 @@ class ScheduleAPI:
             return time_match.group()
         return None
 
-    def get_timecard(self) -> List[Clock]:
+    def get_timecard(self, week_end_date: str = None) -> List[Clock]:
         """
-        :param week_code: The week code to get the timecard for
+        :param week_end_date: The string in format DD/MM/YYYY of the Sunday of the week to get the timecard for
         :return: A timecard for the given week code
         """
+        data = {
+                "authToken": self.auth_token,
+                "reqType": "ESS",
+                "mm": "ESSTIMECARD",
+                "sm": "SUMMARY",
+            }
+
+        if week_end_date is not None:
+            data.update({
+                "weekendDate": week_end_date,
+                "weekend": week_end_date,
+            })
 
         # Make a request to the timecard page
         tc_request = self.session.post(
             "https://mcduk.reflexisinc.co.uk/RWS4/rta/tcard.jsp",
-            data={
-                "authToken": self.auth_token,
-                "reqType": "ESS",
-                # "startDate": "17/07/2023",
-                # "endDate": "23/07/2023",
-                # "startDateInt": 20230717,
-                # "endDateInt": 20230723,
-                "weekendDate": "30/04/2023",
-                "mm": "ESSTIMECARD",
-                "sm": "SUMMARY",
-                "weekend": "30/04/2023",
-            },
+            data=data,
         )
 
         # If the request failed, raise an exception
@@ -287,14 +288,43 @@ class ScheduleAPI:
                 data_dict[date]["punches"].append({"time": time, "type": punch_type})
 
         clocks = []
+
         for date, data in data_dict.items():
+            punches = []
+            time_clocked_in = timedelta()
+            time_clocked_out = timedelta()
+            clock_in_time = None
+            break_time = None
+
+            for punch in data["punches"]:
+                punches.append(Punch(PunchType(punch["type"]), punch["time"]))
+
+                if punch["type"] == "ShiftStart":
+                    clock_in_time = datetime.strptime(punch["time"], "%H:%M")
+
+                if punch["type"] == "MealStart" or punch["type"] == "ShiftEnd":
+                    diff = datetime.strptime(punch["time"], "%H:%M") - clock_in_time
+                    time_clocked_in += diff
+                    break_time = datetime.strptime(punch["time"], "%H:%M")
+
+                if punch["type"] == "MealEnd":
+                    diff = datetime.strptime(punch["time"], "%H:%M") - break_time
+                    time_clocked_out += diff
+                    clock_in_time = datetime.strptime(punch["time"], "%H:%M")
+
+            # Convert total seconds to hours and minutes
+            time_clocked_in_hours, remaining_seconds = divmod(time_clocked_in.seconds, 3600)
+            time_clocked_in_minutes = remaining_seconds // 60
+
+            time_clocked_out_hours, remaining_seconds = divmod(time_clocked_out.seconds, 3600)
+            time_clocked_out_minutes = remaining_seconds // 60
+
             clocks.append(
                 Clock(
                     date,
-                    [
-                        Punch(PunchType(punch["type"]), punch["time"])
-                        for punch in data["punches"]
-                    ],
+                    punches,
+                    f"{time_clocked_in_hours}:{time_clocked_in_minutes}",
+                    f"{time_clocked_out_hours}:{time_clocked_out_minutes}"
                 )
             )
 
