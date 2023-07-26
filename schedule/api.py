@@ -1,5 +1,5 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import bs4
 import pybase64
 from typing import List, Union
@@ -225,10 +225,10 @@ class ScheduleAPI:
                 # "endDate": "23/07/2023",
                 # "startDateInt": 20230717,
                 # "endDateInt": 20230723,
-                "weekendDate": "30/04/2023",
+                "weekendDate": "30/07/2023",
                 "mm": "ESSTIMECARD",
                 "sm": "SUMMARY",
-                "weekend": "30/04/2023",
+                "weekend": "30/07/2023",
             },
         )
 
@@ -287,14 +287,43 @@ class ScheduleAPI:
                 data_dict[date]["punches"].append({"time": time, "type": punch_type})
 
         clocks = []
+
         for date, data in data_dict.items():
+            punches = []
+            time_clocked_in = timedelta()
+            time_clocked_out = timedelta()
+            clock_in_time = None
+            break_time = None
+
+            for punch in data["punches"]:
+                punches.append(Punch(PunchType(punch["type"]), punch["time"]))
+
+                if punch["type"] == "ShiftStart":
+                    clock_in_time = datetime.strptime(punch["time"], "%H:%M")
+
+                if punch["type"] == "MealStart" or punch["type"] == "ShiftEnd":
+                    diff = datetime.strptime(punch["time"], "%H:%M") - clock_in_time
+                    time_clocked_in += diff
+                    break_time = datetime.strptime(punch["time"], "%H:%M")
+
+                if punch["type"] == "MealEnd":
+                    diff = datetime.strptime(punch["time"], "%H:%M") - break_time
+                    time_clocked_out += diff
+                    clock_in_time = datetime.strptime(punch["time"], "%H:%M")
+
+            # Convert total seconds to hours and minutes
+            time_clocked_in_hours, remaining_seconds = divmod(time_clocked_in.seconds, 3600)
+            time_clocked_in_minutes = remaining_seconds // 60
+
+            time_clocked_out_hours, remaining_seconds = divmod(time_clocked_out.seconds, 3600)
+            time_clocked_out_minutes = remaining_seconds // 60
+
             clocks.append(
                 Clock(
                     date,
-                    [
-                        Punch(PunchType(punch["type"]), punch["time"])
-                        for punch in data["punches"]
-                    ],
+                    punches,
+                    f"{time_clocked_in_hours}:{time_clocked_in_minutes}",
+                    f"{time_clocked_out_hours}:{time_clocked_out_minutes}"
                 )
             )
 

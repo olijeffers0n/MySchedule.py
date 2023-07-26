@@ -64,12 +64,14 @@ class Punch:
 
 
 class Clock:
-    def __init__(self, date: str, punches: List[Punch]) -> None:
+    def __init__(self, date: str, punches: List[Punch], clocked_in_time: str, break_time: str) -> None:
         self.date = date
         self.punches = punches
+        self.time_clocked_in = clocked_in_time
+        self.time_clocked_out = break_time
 
     def __repr__(self) -> str:
         data = "Clock("
         for punch in self.punches:
             data += punch.__repr__() + ", "
-        return data[:-2] + ")"
+        return data + f"Time Clocked in: {self.time_clocked_in}, Time Clocked out: {self.time_clocked_out}" + ")"
