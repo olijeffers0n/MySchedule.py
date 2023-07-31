@@ -25,7 +25,7 @@ This will print out the shifts for the current week.
 
 ### Getting Timecard
 ```py
-from schedule.api import ScheduleAPI, PunchType
+from schedule import ScheduleAPI
 
 api = ScheduleAPI("USERID", "PASSWORD")
 api.login()
