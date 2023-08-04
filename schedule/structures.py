@@ -46,13 +46,11 @@ class Shift:
             + ")"
         )
 
-
 class PunchType(Enum):
     ShiftStart = "Shift Start"
     BreakStart = "Meal Start"
     BreakEnd = "Meal End"
     ShiftEnd = "Shift End"
-
 
 class Punch:
     def __init__(self, punch_type: PunchType, time: str) -> None:
@@ -62,6 +60,16 @@ class Punch:
     def __repr__(self) -> str:
         return f"Punch({self.type}, {self.time})"
 
+    def to_dict(self):
+        return {
+            "type": self.type.value,
+            "time": self.time
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        punch_type = PunchType(data["type"])
+        return cls(punch_type, data["time"])
 
 class Clock:
     def __init__(self, date: str, punches: List[Punch], clocked_in_time: str, break_time: str) -> None:
@@ -75,3 +83,16 @@ class Clock:
         for punch in self.punches:
             data += punch.__repr__() + ", "
         return data + f"Time Clocked in: {self.time_clocked_in}, Time Clocked out: {self.time_clocked_out}" + ")"
+
+    def to_dict(self):
+        return {
+            "date": self.date,
+            "punches": [punch.to_dict() for punch in self.punches],
+            "time_clocked_in": self.time_clocked_in,
+            "time_clocked_out": self.time_clocked_out
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        punches = [Punch.from_dict(punch_data) for punch_data in data["punches"]]
+        return cls(data["date"], punches, data["time_clocked_in"], data["time_clocked_out"])
