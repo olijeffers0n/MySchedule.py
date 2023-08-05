@@ -215,17 +215,19 @@ class ScheduleAPI:
         :return: A timecard for the given week code
         """
         data = {
-                "authToken": self.auth_token,
-                "reqType": "ESS",
-                "mm": "ESSTIMECARD",
-                "sm": "SUMMARY",
-            }
+            "authToken": self.auth_token,
+            "reqType": "ESS",
+            "mm": "ESSTIMECARD",
+            "sm": "SUMMARY",
+        }
 
         if week_end_date is not None:
-            data.update({
-                "weekendDate": week_end_date,
-                "weekend": week_end_date,
-            })
+            data.update(
+                {
+                    "weekendDate": week_end_date,
+                    "weekend": week_end_date,
+                }
+            )
 
         # Make a request to the timecard page
         tc_request = self.session.post(
@@ -273,7 +275,7 @@ class ScheduleAPI:
             if date_nodes and date_nodes[0] != " ":
                 date = date_nodes[0]
                 data_dict[date] = {"punches": []}
-            
+
             # Check if time and punch is present
             if time_nodes and punch_type_nodes:
                 # Extract the time and punch type from the CDATA content
@@ -310,18 +312,22 @@ class ScheduleAPI:
                     clock_in_time = datetime.strptime(punch["time"], "%H:%M")
 
             # Convert total seconds to hours and minutes
-            time_clocked_in_hours, remaining_seconds = divmod(time_clocked_in.seconds, 3600)
+            time_clocked_in_hours, remaining_seconds = divmod(
+                time_clocked_in.seconds, 3600
+            )
             time_clocked_in_minutes = remaining_seconds // 60
 
-            time_clocked_out_hours, remaining_seconds = divmod(time_clocked_out.seconds, 3600)
+            time_clocked_out_hours, remaining_seconds = divmod(
+                time_clocked_out.seconds, 3600
+            )
             time_clocked_out_minutes = remaining_seconds // 60
 
             clocks.append(
                 Clock(
                     date,
                     punches,
-                    f"{time_clocked_in_hours}:{time_clocked_in_minutes}",
-                    f"{time_clocked_out_hours}:{time_clocked_out_minutes}"
+                    f"{time_clocked_in_hours}:{time_clocked_in_minutes if time_clocked_in_minutes > 9 else f'0{time_clocked_in_minutes}'}",
+                    f"{time_clocked_out_hours}:{time_clocked_out_minutes if time_clocked_out_minutes > 9 else f'0{time_clocked_out_minutes}'}",
                 )
             )
 
