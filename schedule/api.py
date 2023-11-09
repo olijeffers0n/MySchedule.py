@@ -135,7 +135,7 @@ class ScheduleAPI:
         variables = {}
 
         for line in html[start + 46 : end + len(html[:start])].split("\n"):
-            if line.strip() == "":
+            if line.strip() == "" or line.strip().startswith("//"):
                 continue
             new_line = line.strip().replace("var ", "").replace(";", "")
             variables[new_line.split("=")[0].strip()] = (
