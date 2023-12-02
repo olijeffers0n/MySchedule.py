@@ -49,8 +49,9 @@ class ScheduleAPI:
 
     @staticmethod
     def time_from_number(number):
+        hours = str(number // 60)
         minutes = str(number % 60)
-        return f"{number // 60}:{minutes if len(minutes) == 2 else minutes + '0'}"
+        return f"{hours if len(hours) == 2 else '0' + hours}:{minutes if len(minutes) == 2 else minutes + '0'}"
 
     def _create_form(self):
         data = self.session.get(
@@ -149,20 +150,27 @@ class ScheduleAPI:
         self.auth_token = self._create_session(create_form_html)
         self._get_all_data()
 
-    def get_shifts_for_week(self, week_code: int) -> List[Shift]:
+    def get_shifts_for_date(self, date: datetime) -> List[Shift]:
         """
-        :param week_code: The week code to get the shifts for
-        :return: A list of shifts for the given week code
+        :param date: The date to get the shifts for
+        :return: A list of shifts for the given date
         """
         shifts = []
 
         if self.data is None:
             raise Exception("You must login before you can get shifts")
 
-        self.session.get(
-            "https://mcduk.reflexisinc.co.uk/RWS4/ess/ess_emp_schedule.jsp?authToken="
-            + self.auth_token
+        req = self.session.get(
+            f"https://mcduk.reflexisinc.co.uk/RWS4/ess/ess_emp_schedule.jsp?authToken={self.auth_token}&scheduleDate={date.strftime('%Y%m%d')}"
         )
+
+        if req.status_code != 200:
+            raise Exception("Failed to get shifts")
+
+        data = str(req.content)
+        index = data.index("setGenShiftId")
+        week_code = int(data[index + 14: index + data[index:].index(")")])
+
         req = self.session.get(
             f"https://mcduk.reflexisinc.co.uk/RWS4/controller/ess/map/{self.data['storeId']}/"
             f"{week_code}"
@@ -189,13 +197,6 @@ class ScheduleAPI:
             )
 
         return shifts
-
-    def get_shifts_for_date(self, date: datetime.date) -> List[Shift]:
-        """
-        :param date: The date to get the shifts for
-        :return: A list of shifts for the given date
-        """
-        return self.get_shifts_for_week(int(self.get_week_code_for_date(date)))
 
     @staticmethod
     def extract_time(cdata):
